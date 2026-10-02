@@ -1,0 +1,12 @@
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+generator client { provider = "prisma-client-js" }
+enum Role { STUDENT EMPLOYER COORDINATOR SUPERVISOR ADMIN }
+enum ApplicationStatus { SUBMITTED SHORTLISTED OFFERED REJECTED ACCEPTED }
+enum PlacementStatus { PLANNED ACTIVE COMPLETED CANCELLED }
+model User { id String @id @default(cuid()) email String @unique name String role Role entraObjectId String? @unique entraTenantId String? createdAt DateTime @default(now()) updatedAt DateTime @updatedAt applications Application[] placementsAsStudent Placement[] @relation("StudentPlacements") placementsAsSupervisor Placement[] @relation("SupervisorPlacements") auditEvents AuditEvent[] }
+model Employer { id String @id @default(cuid()) organisationName String contactName String contactEmail String opportunities Opportunity[] placements Placement[] }
+model Opportunity { id String @id @default(cuid()) title String description String location String deadline DateTime employerId String employer Employer @relation(fields:[employerId],references:[id]) applications Application[] createdAt DateTime @default(now()) }
+model Application { id String @id @default(cuid()) studentId String opportunityId String status ApplicationStatus @default(SUBMITTED) submittedAt DateTime @default(now()) student User @relation(fields:[studentId],references:[id]) opportunity Opportunity @relation(fields:[opportunityId],references:[id]) }
+model Placement { id String @id @default(cuid()) studentId String supervisorId String? employerId String status PlacementStatus @default(PLANNED) startDate DateTime endDate DateTime teamsTeamId String? teamsChannelId String? sharePointFolderId String? calendarEventId String? student User @relation("StudentPlacements",fields:[studentId],references:[id]) supervisor User? @relation("SupervisorPlacements",fields:[supervisorId],references:[id]) employer Employer @relation(fields:[employerId],references:[id]) feedback Feedback[] }
+model Feedback { id String @id @default(cuid()) placementId String rating Int comments String submittedAt DateTime @default(now()) placement Placement @relation(fields:[placementId],references:[id]) }
+model AuditEvent { id String @id @default(cuid()) actorId String? action String entityType String entityId String metadata Json? createdAt DateTime @default(now()) actor User? @relation(fields:[actorId],references:[id]) }
